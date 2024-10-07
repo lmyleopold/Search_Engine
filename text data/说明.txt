@@ -1,0 +1,19 @@
+1. data 文件夹存储数据，data里面的index存储生成的 inverted index 的内容
+
+2. token 文件夹用于生成数据集，展示token的分布等，是part 1的内容
+
+3. index 文件夹用于生成 index 和 查询 query
+
+    a. 运行 index.py 可以生成index, 存储在 data.index 里面
+
+    b. 运行 query.py 可以进行查询，里面共有三个函数，normal_query 可以实现keyword, phrase, boolean 查询
+        
+       另外的 phrase_query, boolean_query是使用更加基础的类实现的方式，效果应该是一样的
+
+    c. command line 就是可以输入一个字符串，调用查询的方法，现在还没实现，可以等等，不是很主要
+
+********
+目前还没实现 “ 区域的查询 ”，rank 和 score 也只是调用了 pylucene里的，pylucene里的score就是BM25，我们可以自己定义其他类型
+
+也还没加上计算时间的部分，这个应该不难，获取运行开始和结束的时间即可
+*********
