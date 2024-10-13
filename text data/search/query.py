@@ -1,5 +1,5 @@
 import lucene
-import os
+import os, time
 from java.io import File, StringReader # type: ignore
 from java.nio.file import Path, Paths # type: ignore
 from org.apache.lucene.store import ByteBuffersDirectory, MMapDirectory, NIOFSDirectory, FSDirectory # type: ignore
@@ -23,6 +23,9 @@ from index import create_index
 # query_str = "test AND test" boolean query
 def normal_query(index_path, query_str, N = 10, search_key = "text", casefold = True, stemming = True, stopword = True):
     print("---------- begin normal query ----------", '\n')
+
+    start_time = time.time()
+
     index_directory = FSDirectory.open(Paths.get(index_path))
     index_reader = DirectoryReader.open(index_directory)
     index_searcher = IndexSearcher(index_reader)
@@ -42,6 +45,10 @@ def normal_query(index_path, query_str, N = 10, search_key = "text", casefold = 
     query = QueryParser(search_key, analyzer).parse(query_str)
     
     top_docs = index_searcher.search(query, N)
+
+    end_time = time.time()
+
+    print(f"Query processed in {end_time - start_time:.2f} seconds")
     
     print(f"------found {top_docs.totalHits.value} documents, the top {N} as follows:-----")
     for rank, score_doc in enumerate(top_docs.scoreDocs):
@@ -57,6 +64,9 @@ def normal_query(index_path, query_str, N = 10, search_key = "text", casefold = 
 #use PhraseQuery for phrase query. if the str only have one word, it is also be keyword query
 def phrase_query(index_path, query_str, N = 10, search_key = "text"):
     print("---------- begin phrase query ----------", '\n')
+
+    start_time = time.time()
+
     index_directory = FSDirectory.open(Paths.get(index_path))
     index_reader = DirectoryReader.open(index_directory)
     index_searcher = IndexSearcher(index_reader)
@@ -67,6 +77,10 @@ def phrase_query(index_path, query_str, N = 10, search_key = "text"):
     phrase_query = phrase_query.build()
 
     top_docs = index_searcher.search(phrase_query, N)
+
+    end_time = time.time()
+    print(f"Query processed in {end_time - start_time:.2f} seconds")
+
     print(f"------found {top_docs.totalHits.value} documents, the top {N} as follows:-----")
     for rank, score_doc in enumerate(top_docs.scoreDocs):
         doc_rank = rank + 1
@@ -81,6 +95,9 @@ def phrase_query(index_path, query_str, N = 10, search_key = "text"):
 # use BooleanQuery, can only boolean query
 def boolean_query(index_path, query_str, N = 10, search_key = "text"):
     print("---------- begin boolean query ----------", '\n')
+
+    start_time = time.time()
+
     index_directory = FSDirectory.open(Paths.get(index_path))
     index_reader = DirectoryReader.open(index_directory)
     index_searcher = IndexSearcher(index_reader)
@@ -94,6 +111,10 @@ def boolean_query(index_path, query_str, N = 10, search_key = "text"):
     boolean_query = boolean_query.build()
 
     top_docs = index_searcher.search(boolean_query, N)
+
+    end_time = time.time()
+    print(f"Query processed in {end_time - start_time:.2f} seconds")
+
     print(f"------found {top_docs.totalHits.value} documents, the top {N} as follows:-----")
     for rank, score_doc in enumerate(top_docs.scoreDocs):
         doc_rank = rank + 1
@@ -116,6 +137,8 @@ def geospatial_query(index_path, top_left, bottom_right, N=10):
     :param N: 返回的文档数量
     """
     print("---------- begin geospatial query ----------", '\n')
+
+    start_time = time.time()
     
     # 打开索引目录和索引读取器
     index_directory = FSDirectory.open(Paths.get(index_path))
@@ -136,6 +159,9 @@ def geospatial_query(index_path, top_left, bottom_right, N=10):
 
     # 执行搜索
     top_docs = index_searcher.search(boolean_query, N)
+
+    end_time = time.time()
+    print(f"Query processed in {end_time - start_time:.2f} seconds")
     
     # 输出查询结果
     print(f"------found {top_docs.totalHits.value} businesses, the top {N} as follows:-----")
