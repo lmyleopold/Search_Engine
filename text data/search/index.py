@@ -1,4 +1,4 @@
-import os, shutil, json
+import os, shutil, json, time
 import lucene
 #lucene.initVM() //not initVM here because other file while imports this file will initVM again and error
 from java.io import File, StringReader # type: ignore
@@ -15,8 +15,18 @@ from org.apache.lucene.index import IndexOptions, IndexWriter, IndexWriterConfig
 from org.apache.lucene.queryparser.classic import MultiFieldQueryParser, QueryParser # type: ignore
 from org.apache.lucene.search import BooleanClause,  BooleanQuery, IndexSearcher, TermQuery # type: ignore
 
+
+def count_total_documents(data_path):
+    total_docs = 0
+    for data in data_path:
+        with open(f'./data/LA_{data}.jsonl', 'r') as f:
+            for _ in f:
+                total_docs += 1
+    return total_docs
+
+
 # create inverted index
-def create_index(index_path, casefold = True, stemming = True, stopword = True):
+def create_index(index_path, casefold=True, stemming=True, stopword=True):
     #lucene.initVM()
 
     print('---------- begin creating index ----------')
@@ -47,6 +57,15 @@ def create_index(index_path, casefold = True, stemming = True, stopword = True):
     index_writer = IndexWriter(FSDirectory.open(Paths.get(index_path)), config)
 
     data_path = ['business', 'review']
+
+    # count total documents
+    total_docs = count_total_documents(data_path)
+    docs_per_10_percent = total_docs // 10
+
+    # get start time
+    start_time = time.time()
+    indexed_docs = 0
+
     for data in data_path:
         with open(f'./data/LA_{data}.jsonl', 'r') as f:
             for line in f:
@@ -54,10 +73,16 @@ def create_index(index_path, casefold = True, stemming = True, stopword = True):
                 doc.add(TextField("json_type", data, Field.Store.YES))
                 content = json.loads(line)
                 for key, value in content.items():
-                    if isinstance(value, int):     #store integer
+                    if key == "latitude" and isinstance(value, float):  # 索引 latitude
+                        doc.add(DoublePoint("latitude", value))
+                        doc.add(StoredField("latitude_display", value))  # 可选，存储显示
+                    elif key == "longitude" and isinstance(value, float):  # 索引 longitude
+                        doc.add(DoublePoint("longitude", value))
+                        doc.add(StoredField("longitude_display", value))  # 可选，存储显示
+                    elif isinstance(value, int):
                         doc.add(LongPoint(key, value))
                         doc.add(StoredField(key + "_display", value))
-                    elif isinstance(value, float): #store float
+                    elif isinstance(value, float):
                         doc.add(DoublePoint(key, value))
                         doc.add(StoredField(key + "_display", value))
                     else:                          
@@ -66,6 +91,11 @@ def create_index(index_path, casefold = True, stemming = True, stopword = True):
                         #not token, install the whole phrase for search? 
                         #doc.add(StringField(key, str(value), Field.Store.YES))
                 index_writer.addDocument(doc)
+                indexed_docs += 1
+
+                # print time taken every 10% of documents
+                if indexed_docs % docs_per_10_percent == 0:
+                    print(f"Indexed {indexed_docs} documents in {time.time() - start_time:.2f} seconds")
 
     index_writer.close()
     print('--------- finish creating index ---------')
@@ -86,6 +116,7 @@ def insight_index(index_path):
         doc = index_reader.document(i)
         name = doc.get("name")
         print(f"document ID: {i}, business name: {name}")
+
 
 if __name__ == "__main__":
     lucene.initVM()

@@ -105,6 +105,52 @@ def boolean_query(index_path, query_str, N = 10, search_key = "text"):
 
     index_reader.close()
 
+
+# this function is used to search the businesses in the bounding box
+def geospatial_query(index_path, top_left, bottom_right, N=10):
+    """
+    执行地理空间查询，查找在 bounding box 内的 businesses
+    :param index_path: 索引路径
+    :param top_left: 左上角坐标 (latitude, longitude)
+    :param bottom_right: 右下角坐标 (latitude, longitude)
+    :param N: 返回的文档数量
+    """
+    print("---------- begin geospatial query ----------", '\n')
+    
+    # 打开索引目录和索引读取器
+    index_directory = FSDirectory.open(Paths.get(index_path))
+    index_reader = DirectoryReader.open(index_directory)
+    index_searcher = IndexSearcher(index_reader)
+
+    # 定义范围查询，使用左上角和右下角坐标定义经纬度范围
+    latitude_query = DoublePoint.newRangeQuery(
+        "latitude", bottom_right[0], top_left[0])  # 纬度范围 (最小纬度, 最大纬度)
+    longitude_query = DoublePoint.newRangeQuery(
+        "longitude", top_left[1], bottom_right[1])  # 经度范围 (最小经度, 最大经度)
+
+    # 构建布尔查询，将 latitude 和 longitude 范围查询结合
+    boolean_query = BooleanQuery.Builder()
+    boolean_query.add(latitude_query, BooleanClause.Occur.MUST)  # 必须满足纬度范围
+    boolean_query.add(longitude_query, BooleanClause.Occur.MUST)  # 必须满足经度范围
+    boolean_query = boolean_query.build()
+
+    # 执行搜索
+    top_docs = index_searcher.search(boolean_query, N)
+    
+    # 输出查询结果
+    print(f"------found {top_docs.totalHits.value} businesses, the top {N} as follows:-----")
+    for rank, score_doc in enumerate(top_docs.scoreDocs):
+        doc_rank = rank + 1
+        doc_id = score_doc.doc
+        doc_score = score_doc.score
+        doc = index_searcher.doc(score_doc.doc)
+        print(f"json_type: {doc.get('json_type')}, rank: {doc_rank}, score: {doc_score}, "
+              f"docID: {doc_id}, name: {doc.get('name')}, "
+              f"latitude: {doc.get('latitude_display')}, longitude: {doc.get('longitude_display')}", '\n')
+
+    index_reader.close()
+
+
 if __name__ == "__main__":
     index_path = "./data/index"
     lucene.initVM()
@@ -121,3 +167,7 @@ if __name__ == "__main__":
     #in boolean query, after splitint, select the word not in {and, or, not}
     #I have not achieved this
     boolean_query(index_path, query_str)
+    
+    top_left = (30.0, -90.05)
+    bottom_right = (29.0, -90.0)
+    geospatial_query(index_path, top_left, bottom_right)
