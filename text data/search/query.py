@@ -13,6 +13,7 @@ from org.apache.lucene.document import Document, Field, StoredField, LongPoint, 
 from org.apache.lucene.index import IndexOptions, IndexWriter, IndexWriterConfig, DirectoryReader, FieldInfos, MultiFields, MultiTerms, Term # type: ignore
 from org.apache.lucene.queryparser.classic import MultiFieldQueryParser, QueryParser # type: ignore
 from org.apache.lucene.search import BooleanClause, BooleanQuery, IndexSearcher, TermQuery, PhraseQuery # type: ignore
+from org.apache.lucene.search.highlight import Highlighter, QueryScorer, SimpleFragmenter, SimpleHTMLFormatter  # type: ignore
 from index import create_index
 
 # this function use ""QueryParser""
@@ -46,6 +47,12 @@ def normal_query(index_path, query_str, N = 10, search_key = "text", casefold = 
     
     top_docs = index_searcher.search(query, N)
 
+    # 使用 Highlighter 来生成摘要片段
+    formatter = SimpleHTMLFormatter("<b>", "</b>")  # 定义高亮格式
+    scorer = QueryScorer(query)
+    highlighter = Highlighter(formatter, scorer)
+    highlighter.setTextFragmenter(SimpleFragmenter(50))  # 片段的长度为50个字符
+
     end_time = time.time()
 
     print(f"Query processed in {end_time - start_time:.2f} seconds")
@@ -56,6 +63,16 @@ def normal_query(index_path, query_str, N = 10, search_key = "text", casefold = 
         doc_id = score_doc.doc
         doc_score = score_doc.score
         doc = index_searcher.doc(score_doc.doc)
+        
+        # 获取要高亮的字段文本
+        text_to_highlight = doc.get(search_key)
+        if text_to_highlight:
+            token_stream = analyzer.tokenStream(search_key, StringReader(text_to_highlight))
+            fragment = highlighter.getBestFragment(token_stream, text_to_highlight)
+            snippet = fragment if fragment else text_to_highlight[:100]
+        else:
+            snippet = "No snippet available"
+
         print(f"json_type: {doc.get('json_type')}, rank: {doc_rank}, score: {doc_score},\
               docID: {doc_id}, {search_key}: {doc.get(search_key)}", '\n')
 
