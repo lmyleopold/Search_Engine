@@ -407,6 +407,27 @@ Enter query type ('normal', 'phrase', 'boolean', 'geospatial'): exit
 Exiting console. Goodbye!
 ```
 
+update
+
+```
+Enter your search query: car
+Enter the number of results to display (default is 10): 5
+Enter the search key (default is 'text'): name
+---------- begin normal query ---------- 
+
+Query processed in 0.09 seconds
+------found 82 documents, the top 5 as follows:-----
+json_type: business, rank: 1, score: 2.5097739696502686,              docID: 4218, name: Car Doc 
+
+json_type: business, rank: 2, score: 2.1646687984466553,              docID: 1, name: Nifty Car Rental 
+
+json_type: business, rank: 3, score: 2.1646687984466553,              docID: 241, name: Sahara Car Wash 
+
+json_type: business, rank: 4, score: 2.1646687984466553,              docID: 631, name: Enterprise Car Sales 
+
+json_type: business, rank: 5, score: 2.1646687984466553,              docID: 762, name: Halima Car Wash
+```
+
 
 
 # **3.4 Review Summary**
