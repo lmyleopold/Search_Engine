@@ -86,8 +86,10 @@ def create_index(index_path, casefold=True, stemming=True, stopword=True):
                         doc.add(DoublePoint(key, value))
                         doc.add(StoredField(key + "_display", value))
                     else:                          
-                        #store string, object or array, all change into str and token
-                        doc.add(TextField(key, str(value), Field.Store.YES))
+                        if key == 'user_id':
+                           doc.add(StringField(key, str(value), Field.Store.YES))
+                        else:                          
+                            doc.add(TextField(key, str(value), Field.Store.YES))
                         #not token, install the whole phrase for search? 
                         #doc.add(StringField(key, str(value), Field.Store.YES))
                 index_writer.addDocument(doc)
