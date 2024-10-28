@@ -15,7 +15,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 def get_review_sentence_score(review_tfidf, cosine = False):
     if cosine:
         cosine_matrix = cosine_similarity(review_tfidf)
-        review_sentence_score = (cosine_matrix.sum(axis=1) - 1) / (cosine_matrix.shape[1] - 1)
+        review_sentence_score = cosine_matrix.mean(axis=1) / np.count_nonzero(review_tfidf, axis=1)
     else:
         review_sentence_score = review_tfidf.sum(axis=1)
         review_sentence_count = np.count_nonzero(review_tfidf, axis=1)
