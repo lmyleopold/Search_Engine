@@ -86,7 +86,7 @@ def create_index(index_path, casefold=True, stemming=True, stopword=True):
                         doc.add(DoublePoint(key, value))
                         doc.add(StoredField(key + "_display", value))
                     else:                          
-                        if key == 'user_id':
+                        if key in ('user_id', 'business_id', 'review_id'):
                            doc.add(StringField(key, str(value), Field.Store.YES))
                         else:                          
                             doc.add(TextField(key, str(value), Field.Store.YES))
