@@ -12,7 +12,7 @@
 
         第一种是 ： 将这个矩阵 [0.001, 0, 0, 0.23, 0.68] 加起来，矩阵的和除以非零元素的个数，这是防止越长的句子这个和越大。 然后选出tf-idf矩阵和最大的几个sentence。这种方式选出来的句子很短
 
-        第二种是 ： 不是简单sum矩阵，利用cosine similarity，计算这个句子[0.001, 0, 0, 0.23, 0.68]与其他所有句子的cosine similarity值，然后平均。这种方式取出来的句子很长，似乎不是很合理，我再想想
+        第二种是 ： 不是简单sum矩阵，利用cosine similarity，计算这个句子[0.001, 0, 0, 0.23, 0.68]与其他所有句子的cosine similarity值，然后平均, 再除以句子长度做一个惩罚， 解决了句子较长的问题。
     
     e. 在这个user自己的review中出现很频繁的句子也可能在其他user中出现频繁，因此要选出在其他用户中不那么频繁的句子
 
@@ -20,19 +20,38 @@
             （1）. 随机选出100个用户，根据 d 步，选出每个人使用最频繁的句子
             （2）. 利用tf-idf 或这个 cosine similarity，选出这个user 在这些句子中 tf-idf较小的句子
     
+    一些想法：
+        通过tf-idf 和 cosine similarity两种方式得到的句子是不同的，tf-idf倾向于选出那些含有特别的词的句子，强调信息量和关键词的重要性，cosine similarity比较的是句子内容是否相似，
+        
+        近一步的方式可能是两者进行结合， 例如 score = tf-idf + lambda * cosine_similarity
+    
     示例：
-    user_id = '3JQ8RjMGiT8m5hsBq99Zfw'
-    前十个使用最频繁的句子：
-    ["I'm skeptical about that claim.", 'All in all, a pleasant experience!', 'Brussel sprouts were delicious.', 'Atmosphere is extremely chaotic.', 'Decent place, very inexpensive.', "Seaworthy's service is lacking.", "Reginelli's disappoints me sometimes.", 'Very light, undetectable dressing.', 'Fresh fillings, generous portions.', 'A very consistent establishment!']
-    前三个最后代表性的：
-    ['A very consistent establishment!', 'All in all, a pleasant experience!', 'Atmosphere is extremely chaotic.']
+    使用tf-idf : user_id = '3JQ8RjMGiT8m5hsBq99Zfw'
+        前十个使用最频繁的句子：
+        ["I'm skeptical about that claim.", 'All in all, a pleasant experience!', 'Brussel sprouts were delicious.', 'Atmosphere is extremely chaotic.', 'Decent place, very inexpensive.', "Seaworthy's service is lacking.", "Reginelli's disappoints me sometimes.", 'Very light, undetectable dressing.', 'Fresh fillings, generous portions.', 'A very consistent establishment!']
+        前三个最后代表性的：
+        ['A very consistent establishment!', 'All in all, a pleasant experience!', 'Atmosphere is extremely chaotic.']
 
-    user_id = 'QQtoHnP0cP7nzNnUob_1CQ'
-    前十个使用最频繁的句子：
-    ['Similarly I enjoyed the vegetables.', 'Perfectly dressed and balanced.', "It's a standard, simple cocktail.", 'Quintessential New Orleans cuisine.', "I wouldn't come as a destination.", 'I prefer a more holistic approach.', 'Something different about them.', "I certainly didn't leave hungry.", 'I chose Roast Duckling Madison.', 'Basil, sprouts, lime, jalepenos.']
-    前三个最后代表性的：
-    ['A little pork and a little vinegar.', 'Basil, sprouts, lime, jalepenos.', 'Definitely coming back for more.']
+    使用tf-idf : user_id = 'QQtoHnP0cP7nzNnUob_1CQ'
+        前十个使用最频繁的句子：
+        ['Similarly I enjoyed the vegetables.', 'Perfectly dressed and balanced.', "It's a standard, simple cocktail.", 'Quintessential New Orleans cuisine.', "I wouldn't come as a destination.", 'I prefer a more holistic approach.', 'Something different about them.', "I certainly didn't leave hungry.", 'I chose Roast Duckling Madison.', 'Basil, sprouts, lime, jalepenos.']
+        前三个最后代表性的：
+        ['A little pork and a little vinegar.', 'Basil, sprouts, lime, jalepenos.', 'Definitely coming back for more.']
+    
+    使用 cosine similarity : user_id = '3JQ8RjMGiT8m5hsBq99Zfw'
+        前十个使用最频繁的句子：
+        ['I just had some decaf and it was good.', 'I also ordered the fish of the day.', 'I love the menu, the place, music.', 'The service and value are great.', 'I ordered the little salad and it was delicious.', 'The quality is the best in New Orleans.', '5 stars for the bakery and coffee and 3 for the restaurant.', 'This was the highlight of the evening.', 'The coffee is great and the service was excellent.', "Well, it's the best I have had here."]
+        前三个最后代表性的：
+        ['5 stars for the bakery and coffee and 3 for the restaurant.', 'A couple of us tried it and it was very good.', 'Bread pudding was last and it was ok.']
+    
+    使用 cosine similarity : user_id = 'QQtoHnP0cP7nzNnUob_1CQ'
+        前十个使用最频繁的句子：
+        ['It was delicious and had a custard-y flavor.', 'The bread and cheese were enough for me.', 'It was pretty good but so rich.', 'When I got the bill, it was $8 or $9!', "It's not, it's a full, hot, plate.", 'It was not bread pudding, and it was pretty dry.', 'It was hot but was pretty bland.', 'But, it had very little flavor.', 'The food and service was excellent.', 'But it was only $6.50, so it was okay.']
+        前三个最后代表性的：
+        ["And it was the same price as Luke's!", 'But it was only $6.50, so it was okay.', 'But, it had very little flavor.']
+    
 
+    
 
 2. application 部分 实现了一个相对简单的推荐系统, 代码在github text data/summary/recommend.py
 
