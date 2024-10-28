@@ -8,48 +8,76 @@
 
     注：假设根据改user所有的review建立了一个vocabulary，这个vocabulary里面有 N 个词，那么对于一个句子的tf-idf embedding 得到的矩阵的维度是 1行 N列，例如 [0.001, 0, 0, 0.23, 0.68], 0就是vocabulary中的这个词在这个sentence里没出现， 其他的数是这个词的tf-idf值
 
-    d. 在得到embedding之后，选出在这个用户评论中使用最频繁的sentence， 这里考虑了两种方式：
+    d. 在得到embedding之后，选出在这个用户评论中使用最频繁的sentence, 这里使用cosine_similarity：
 
-        第一种是 ： 将这个矩阵 [0.001, 0, 0, 0.23, 0.68] 加起来，矩阵的和除以非零元素的个数，这是防止越长的句子这个和越大。 然后选出tf-idf矩阵和最大的几个sentence。这种方式选出来的句子很短
-
-        第二种是 ： 不是简单sum矩阵，利用cosine similarity，计算这个句子[0.001, 0, 0, 0.23, 0.68]与其他所有句子的cosine similarity值，然后平均, 再除以句子长度做一个惩罚， 解决了句子较长的问题。
+        利用cosine similarity，计算这个句子[0.001, 0, 0, 0.23, 0.68]与其他所有句子的cosine similarity值，然后平均, 再除以句子长度做一个惩罚， 解决了句子较长的问题。
     
     e. 在这个user自己的review中出现很频繁的句子也可能在其他user中出现频繁，因此要选出在其他用户中不那么频繁的句子
 
         具体流程是：
             （1）. 随机选出100个用户，根据 d 步，选出每个人使用最频繁的句子
-            （2）. 利用tf-idf 或这个 cosine similarity，选出这个user 在这些句子中 tf-idf较小的句子
-    
-    一些想法：
-        通过tf-idf 和 cosine similarity两种方式得到的句子是不同的，tf-idf倾向于选出那些含有特别的词的句子，强调信息量和关键词的重要性，cosine similarity比较的是句子内容是否相似，
-        
-        近一步的方式可能是两者进行结合， 例如 score = tf-idf + lambda * cosine_similarity
+            （2）. 利用cosine similarity，选出这个user 在这些句子中cosine similarity较小的句子
     
     示例：
-    使用tf-idf : user_id = '3JQ8RjMGiT8m5hsBq99Zfw'
-        前十个使用最频繁的句子：
-        ["I'm skeptical about that claim.", 'All in all, a pleasant experience!', 'Brussel sprouts were delicious.', 'Atmosphere is extremely chaotic.', 'Decent place, very inexpensive.', "Seaworthy's service is lacking.", "Reginelli's disappoints me sometimes.", 'Very light, undetectable dressing.', 'Fresh fillings, generous portions.', 'A very consistent establishment!']
-        前三个最后代表性的：
-        ['A very consistent establishment!', 'All in all, a pleasant experience!', 'Atmosphere is extremely chaotic.']
+    这是第一个用户
+    embedding_type = bow, user_id = QQtoHnP0cP7nzNnUob_1CQ
+    the 10 most common sentences:
+    ['Miriam had a salad and the drum.', 'The coffee is great and the service was excellent.', 'The staff is friendly and the prices fair.', 'The cake was dry and really dense.', 'The exception is the BBQ counter.', 'About balance and highlighting the ingredients.', 'The greens and slaw were perfection.', 'The dead battery was the worst.', 'The service and value are great.', 'This was the highlight of the evening.']
+    the 3 most representative sentences:
+    11
+    ['The staff is friendly and the prices fair.', 'They were good and the price was fair.', 'This was the highlight of the evening.']
+    ------------------------------------
+    embedding_type = tf-idf, user_id = QQtoHnP0cP7nzNnUob_1CQ
+    the 10 most common sentences:
+    ['The service was just ok at best.', 'We had a great time and the food was delicious.', 'I just had some decaf and it was good.', 'This is really terrific chicken.', 'They were good and the price was fair.', 'The quality is the best in New Orleans.', 'I ordered the little salad and it was delicious.', 'This was the highlight of the evening.', 'The service and value are great.', 'The coffee is great and the service was excellent.']
+    the 3 most representative sentences:
+    11
+    ["Well, it's the best I have had here.", 'You have to pay for better food.', 'and the best we had on our trip.']
+    ------------------------------------
+    embedding_type = ngram, user_id = QQtoHnP0cP7nzNnUob_1CQ
+    the 10 most common sentences:
+    ["Doesn't matter, it was terrible.", 'Best croissants in New Orleans.', 'It was a theme for the day unfortunately.', 'It was beautiful and very thoughtful.', "Some of the best you'll find in New Orleans.", 'It was huge and nicely dressed.', 'It was a beautifully presented dish.', 'I ordered the little salad and it was delicious.', 'Bread pudding was last and it was ok.', 'Nothing special but it was fine.']
+    the 3 most representative sentences:
+    11
+    ['This was the highlight of the evening.', 'We finished with the bread pudding and it was excellent.', 'We had dinner here tonight, and it was very good.']
+    ------------------------------------
+    embedding_type = bert, user_id = QQtoHnP0cP7nzNnUob_1CQ
+    the 10 most common sentences:
+    ['I chose Roast Duckling Madison.', 'The mashed potatoes were instant.', 'Similarly I enjoyed the vegetables.', 'We both chose Italian dressing.', 'The catfish dish was excellent.', 'The bread service is embarrassing.', 'Perfectly dressed and balanced.', 'Quintessential New Orleans cuisine.', 'Something different about them.', 'Inspired and beautifully prepared.']
+    the 3 most representative sentences:
+    11
+    ['This is really terrific chicken.', 'This was a good representation.', 'We both chose Italian dressing.']
+    ------------------------------------
 
-    使用tf-idf : user_id = 'QQtoHnP0cP7nzNnUob_1CQ'
-        前十个使用最频繁的句子：
-        ['Similarly I enjoyed the vegetables.', 'Perfectly dressed and balanced.', "It's a standard, simple cocktail.", 'Quintessential New Orleans cuisine.', "I wouldn't come as a destination.", 'I prefer a more holistic approach.', 'Something different about them.', "I certainly didn't leave hungry.", 'I chose Roast Duckling Madison.', 'Basil, sprouts, lime, jalepenos.']
-        前三个最后代表性的：
-        ['A little pork and a little vinegar.', 'Basil, sprouts, lime, jalepenos.', 'Definitely coming back for more.']
-    
-    使用 cosine similarity : user_id = '3JQ8RjMGiT8m5hsBq99Zfw'
-        前十个使用最频繁的句子：
-        ['I just had some decaf and it was good.', 'I also ordered the fish of the day.', 'I love the menu, the place, music.', 'The service and value are great.', 'I ordered the little salad and it was delicious.', 'The quality is the best in New Orleans.', '5 stars for the bakery and coffee and 3 for the restaurant.', 'This was the highlight of the evening.', 'The coffee is great and the service was excellent.', "Well, it's the best I have had here."]
-        前三个最后代表性的：
-        ['5 stars for the bakery and coffee and 3 for the restaurant.', 'A couple of us tried it and it was very good.', 'Bread pudding was last and it was ok.']
-    
-    使用 cosine similarity : user_id = 'QQtoHnP0cP7nzNnUob_1CQ'
-        前十个使用最频繁的句子：
-        ['It was delicious and had a custard-y flavor.', 'The bread and cheese were enough for me.', 'It was pretty good but so rich.', 'When I got the bill, it was $8 or $9!', "It's not, it's a full, hot, plate.", 'It was not bread pudding, and it was pretty dry.', 'It was hot but was pretty bland.', 'But, it had very little flavor.', 'The food and service was excellent.', 'But it was only $6.50, so it was okay.']
-        前三个最后代表性的：
-        ["And it was the same price as Luke's!", 'But it was only $6.50, so it was okay.', 'But, it had very little flavor.']
-    
+    这是第二个用户
+    embedding_type = bow, user_id = 3JQ8RjMGiT8m5hsBq99Zfw
+    the 10 most common sentences:
+    ['The cheeseburger here was sublime.', 'The lychee and the pear were fantastic.', 'It was the bargain of a lifetime!', 'The mimosa and the tea were excellent.', 'The atmosphere was very unenjoyable.', 'The service was very attentive.', 'The waitress was warm and friendly.', 'The food and service was excellent.', 'The order-at-the-counter process was perfect.', 'The pizza-by-the-slice is excellent.']
+    the 3 most representative sentences:
+    11
+    ['The waitress was warm and friendly.', 'The worst part was the sticker shock.', 'Was a great complement to the calamari.']
+    ------------------------------------
+    embedding_type = tf-idf, user_id = 3JQ8RjMGiT8m5hsBq99Zfw
+    the 10 most common sentences:
+    ['The macaroni and cheese was pretty good too.', 'The service was very attentive.', 'It was very affordable and tasty.', 'It was hot but was pretty bland.', 'But, it had very little flavor.', 'The bread and cheese were enough for me.', 'The order-at-the-counter process was perfect.', 'It was pretty good but so rich.', 'The pizza-by-the-slice is excellent.', 'The food and service was excellent.']
+    the 3 most representative sentences:
+    11
+    ['The spicy potato salad was really good!', 'The waiter was very nice as well.', 'The waitress was warm and friendly.']
+    ------------------------------------
+    embedding_type = ngram, user_id = 3JQ8RjMGiT8m5hsBq99Zfw
+    the 10 most common sentences:
+    ['It was tasty but a little gummy.', 'It was simply okay, not delicious.', 'But it was only $6.50, so it was okay.', 'It was hot but was pretty bland.', 'It was the bargain of a lifetime!', 'It was not bread pudding, and it was pretty dry.', 'It was delicious and rivaled Chick-Fil-A.', 'It was pretty good but so rich.', 'It was served with fluffy rice.', 'It was very affordable and tasty.']
+    the 3 most representative sentences:
+    11
+    ['It was tasty but a little gummy.', 'It was tender and cooked perfectly medium rare.', 'It was the bargain of a lifetime!']
+    ------------------------------------
+    embedding_type = bert, user_id = 3JQ8RjMGiT8m5hsBq99Zfw
+    the 10 most common sentences:
+    ['The cheeseburger here was sublime.', 'The rolls were reasonably priced.', 'My tastebuds were honestly dazzled.', 'The finger sandwiches were lacking.', 'Obviously not their signature dish.', 'A very consistent establishment!', 'That was completely ridiculous.', 'Brussel sprouts were delicious.', 'Lavender lemonade was refreshing.', 'The pizza-by-the-slice is excellent.']
+    the 3 most representative sentences:
+    11
+    ['The waiters are utter dum-dums.', 'This place merits regular visits.', 'Very light, undetectable dressing.']
+    ------------------------------------
 
     
 
